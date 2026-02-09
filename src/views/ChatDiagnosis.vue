@@ -50,8 +50,8 @@
             
             <div class="p-4 border-t border-slate-100 dark:border-slate-800">
                 <div class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-colors">
-                    <div class="w-10 h-10 rounded-full bg-cover bg-center border border-slate-200 dark:border-slate-700 bg-indigo-100 flex items-center justify-center overflow-hidden">
-                        <span class="material-symbols-outlined text-indigo-500">person</span>
+                    <div class="w-10 h-10 rounded-full border border-slate-200 dark:border-slate-700 overflow-hidden">
+                        <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuAjgshe5LeVLixVjT8g4veC8v8xOxgr21Y1qpWqW4YViSxSvkBNA97_WGDI0k8bdGnzm5BL7bMoNrgPTgYEEOVj078NjY559ASlIy1FrJD9wFbHrtuIElOBLZaqNoF1mR8DwPlABNkWfknqgRDQ4jDTYNn-EVOkqKhTkSHezAG8A8NhTrFWdUmRdNS3mbLxj2OcPpz0glXcR0zX-q8k173_o1M8iBo9FLx-cXzpMYc8ihpQByZOQetGjoaUlZcPCeHMUkwQtCBBf80" class="w-full h-full object-cover">
                     </div>
                     <div class="flex flex-col flex-1">
                         <p class="text-sm font-medium text-slate-900 dark:text-white">{{ userInfo.username || 'User' }}</p>
@@ -103,7 +103,7 @@
                     <div class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 bg-white dark:bg-[#161b26]" ref="messageBoxRef">
                         
                         <!-- Welcome Message -->
-                        <div v-if="messages.length === 0" class="flex flex-col items-center justify-center gap-6 py-8 text-center animate-fade-in-up">
+                        <div v-if="chatStore.messages.length === 0" class="flex flex-col items-center justify-center gap-6 py-8 text-center animate-fade-in-up">
                             <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-2">
                                 <span class="material-symbols-outlined text-4xl">waving_hand</span>
                             </div>
@@ -114,11 +114,11 @@
                         </div>
 
                         <!-- Message Loop -->
-                        <div v-for="(msg, index) in messages" :key="index">
+                        <div v-for="(msg, index) in chatStore.messages" :key="index">
                             
                             <!-- User Message -->
                             <div v-if="msg.role === 'user'" class="flex flex-row-reverse gap-4 items-start group">
-                                <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center shrink-0 border border-slate-100 mt-1 overflow-hidden">
+                                <div class="w-8 h-8 rounded-full border border-slate-100 mt-1 overflow-hidden shrink-0">
                                     <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuAjgshe5LeVLixVjT8g4veC8v8xOxgr21Y1qpWqW4YViSxSvkBNA97_WGDI0k8bdGnzm5BL7bMoNrgPTgYEEOVj078NjY559ASlIy1FrJD9wFbHrtuIElOBLZaqNoF1mR8DwPlABNkWfknqgRDQ4jDTYNn-EVOkqKhTkSHezAG8A8NhTrFWdUmRdNS3mbLxj2OcPpz0glXcR0zX-q8k173_o1M8iBo9FLx-cXzpMYc8ihpQByZOQetGjoaUlZcPCeHMUkwQtCBBf80" class="w-full h-full object-cover">
                                 </div>
                                 <div class="flex flex-col items-end gap-1 max-w-[80%]">
@@ -130,7 +130,7 @@
                                     <div class="bg-primary text-white px-5 py-3.5 rounded-2xl rounded-tr-sm shadow-md text-sm leading-relaxed whitespace-pre-wrap">
                                         {{ msg.content }}
                                     </div>
-                                    <span class="text-[11px] text-slate-400 mr-1 opacity-0 group-hover:opacity-100 transition-opacity">Just now</span>
+                                    <span class="text-[11px] text-slate-400 mr-1 opacity-100 transition-opacity">{{ msg.timestamp }}</span>
                                 </div>
                             </div>
 
@@ -141,8 +141,17 @@
                                 </div>
                                 <div class="flex flex-col items-start gap-1 max-w-[80%]">
                                     <div class="bg-[#f6f6f8] dark:bg-slate-800 text-[#111318] dark:text-slate-200 px-5 py-3.5 rounded-2xl rounded-tl-sm text-sm leading-relaxed whitespace-pre-wrap">
-                                        {{ msg.content }}
+                                        {{ msg.content.replace('[#CREATE_TICKET#]', '') }}
                                         <span v-if="msg.streaming" class="inline-block w-1.5 h-4 bg-primary animate-pulse ml-1 align-middle"></span>
+                                        
+                                        <!-- Inline Action Button -->
+                                        <div v-if="msg.content.includes('[#CREATE_TICKET#]')" class="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+                                            <button @click="handleCreateTicket" class="flex items-center gap-2 bg-primary hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl transition-all shadow-md group w-full justify-center">
+                                                <span class="material-symbols-outlined text-lg group-hover:scale-110 transition-transform">confirmation_number</span>
+                                                <span class="font-bold">一键创建售后工单</span>
+                                            </button>
+                                            <p class="text-[10px] text-slate-400 mt-2 text-center">点击后将由后台专家自动接入当前上下文</p>
+                                        </div>
                                     </div>
                                     
                                     <!-- Status / Debug Info -->
@@ -175,8 +184,24 @@
                                          </el-button>
                                     </div>
 
+                                    <!-- Instance Status Card -->
+                                    <InstanceCard 
+                                        v-if="msg.instanceData" 
+                                        :data="msg.instanceData"
+                                        @confirm="handleInstanceConfirm(msg.instanceData)"
+                                        @requery="sendMessage('请再查一下实例 ' + msg.instanceData.instanceId)"
+                                    />
+
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Query Loading Indicator -->
+                    <div v-if="isQuerying" class="flex justify-center items-center py-4 px-6 bg-white dark:bg-[#161b26] border-t border-slate-100 dark:border-slate-800">
+                        <div class="flex items-center gap-3 px-5 py-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                            <div class="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                            <span class="text-sm text-blue-600 dark:text-blue-400 font-medium">{{ queryingText || '正在查询中...' }}</span>
                         </div>
                     </div>
 
@@ -191,8 +216,8 @@
                              <span class="text-xs text-slate-500">已添加图片</span>
                         </div>
 
-                        <div class="relative flex items-end gap-2 bg-[#f0f2f4] dark:bg-slate-800/50 border border-transparent focus-within:border-primary/50 focus-within:bg-white dark:focus-within:bg-slate-900 rounded-2xl p-2 transition-all shadow-inner">
-                            <div class="flex pb-1 pl-1">
+                        <div class="relative flex items-center gap-2 bg-[#f0f2f4] dark:bg-slate-800/50 border border-transparent focus-within:border-primary/50 focus-within:bg-white dark:focus-within:bg-slate-900 rounded-2xl p-1.5 transition-all shadow-inner">
+                            <div class="flex pl-1">
                                 <!-- Upload Button -->
                                 <el-upload
                                    action="#"
@@ -212,13 +237,13 @@
                                 v-model="inputMessage"
                                 @keydown.enter.prevent="sendMessage"
                                 :disabled="loading"
-                                class="w-full bg-transparent border-none focus:ring-0 text-slate-900 dark:text-white placeholder-slate-400 resize-none py-3 max-h-32 text-sm leading-relaxed" 
+                                class="w-full bg-transparent border-none focus:ring-0 text-slate-900 dark:text-white placeholder-slate-400 resize-none py-2.5 max-h-32 text-sm leading-relaxed" 
                                 placeholder="请输入您的问题..." 
                                 rows="1"
-                                style="outline: none;"
+                                style="outline: none; vertical-align: middle;"
                             ></textarea>
                             
-                            <button @click="sendMessage" :disabled="loading || (!inputMessage.trim() && !pendingImage)" class="p-2.5 mb-0.5 bg-primary text-white rounded-xl shadow-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0 flex items-center justify-center">
+                            <button @click="sendMessage" :disabled="loading || (!inputMessage.trim() && !pendingImage)" class="p-2.5 bg-primary text-white rounded-xl shadow-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0 flex items-center justify-center">
                                 <span class="material-symbols-outlined text-[20px]">send</span>
                             </button>
                         </div>
@@ -235,10 +260,13 @@
 </template>
 
 <script setup>
-import { ref, reactive, nextTick, onMounted } from 'vue'
+import { ref, reactive, nextTick, onMounted, watch } from 'vue'
 import { chatDiagnosisStream } from '../api/diagnosis'
 import { uploadFile, getUserTickets } from '../api/ticket'
 import { ElMessage } from 'element-plus'
+import InstanceCard from './components/InstanceCard.vue'
+import dayjs from 'dayjs'
+import { chatStore } from '../store/chatStore'
 
 // Load Tailwind Script Dynamically if not present (Hack for Prototype)
 onMounted(() => {
@@ -266,10 +294,12 @@ onMounted(() => {
         }
         document.head.appendChild(script)
     }
-    fetchTicketHistory()
+
 })
 
 const loading = ref(false)
+const isQuerying = ref(false) // Tool  查询中状态
+const queryingText = ref('') // 查询提示文本
 const inputMessage = ref('')
 const messageBoxRef = ref(null)
 const inputRef = ref(null)
@@ -286,25 +316,37 @@ onMounted(() => {
     if (stored) {
         try {
             userInfo.value = JSON.parse(stored)
+            
+            // Check for critical missing token (Migration to Auth System)
+            if (!userInfo.value.token) {
+                 ElMessage.warning('系统升级，请重新登录以获取访问权限')
+                 localStorage.removeItem('userInfo')
+                 setTimeout(() => window.location.href = '/#/login', 1500)
+                 return
+            }
+
             // Update session with real user ID
             session.userId = userInfo.value.id || 1003
+            fetchTicketHistory() // Load tickets after user info is ready
         } catch (e) {
             console.error('Failed to parse userInfo', e)
         }
+    } else {
+        // No user info, redirect to login
+        window.location.href = '/#/login'
+        return
     }
     
-    // Load saved messages from localStorage
-    const savedMessages = localStorage.getItem('chat_messages')
-    if (savedMessages) {
-        try {
-            const parsed = JSON.parse(savedMessages)
-            if (Array.isArray(parsed) && parsed.length > 0) {
-                messages.value = parsed
-            }
-        } catch (e) {
-            console.error('Failed to parse saved messages', e)
-        }
+    // Initialize chatStore if empty
+    if (chatStore.messages.length === 0) {
+        chatStore.reset()
+    } else {
+        scrollToBottom()
     }
+    
+    // Check for pending specific question context (Ticket creation -> Chat persistence)
+    // If ticketNo is passed, we might want to inject a context message, 
+    // but for now we just observe the existing chat store.
     
     // Load saved session ID
     const savedSessionId = localStorage.getItem('diagnosis_session_id')
@@ -315,29 +357,17 @@ onMounted(() => {
 
 // Logout function
 const logout = () => {
+    const userId = userInfo.value.id || 1003
     localStorage.removeItem('userInfo')
-    localStorage.removeItem('chat_messages')
+    chatStore.reset() // Clear chat on logout explicitly
     localStorage.removeItem('diagnosis_session_id')
     window.location.href = '/#/login'
-}
-
-// Save messages to localStorage whenever they change
-const saveMessages = () => {
-    // Only save essential data, strip reactive wrappers
-    const toSave = messages.value.map(m => ({
-        role: m.role,
-        content: m.content,
-        image: m.image,
-        ticketNo: m.ticketNo,
-        ticketId: m.ticketId
-    }))
-    localStorage.setItem('chat_messages', JSON.stringify(toSave))
 }
 
 // Build conversation history string for ticket
 const buildConversationHistory = () => {
     let history = ''
-    messages.value.forEach((msg, idx) => {
+    chatStore.messages.forEach((msg, idx) => {
         if (msg.role === 'user') {
             history += `[用户]: ${msg.content}\n`
             if (msg.image) {
@@ -371,12 +401,8 @@ const session = reactive({
   tenantCode: 'DEFAULT'
 })
 
-const messages = ref([
-  { 
-    role: 'ai', 
-    content: '您好！我是您的智能售后专家。您可以直接告诉我您遇到的问题，我会帮您排查或查询数据。' 
-  }
-])
+// Messages state is now managed by chatStore
+// const messages = ref([...]) Removed
 
 const scrollToBottom = async () => {
   await nextTick()
@@ -394,17 +420,25 @@ const handleImageUpload = async (options) => {
    }
 }
 
-const sendMessage = async () => {
+const sendMessage = async (extraData = {}) => {
   if ((!inputMessage.value.trim() && !pendingImage.value) || loading.value) return
   
   const userText = inputMessage.value
   const imageUrl = pendingImage.value
   
+  // 检测是否为查询类消息，设置 Loading 提示
+  const queryKeywords = ['查询', '订单', '客户', '状态', '实例', '查一下', '帮我查']
+  if (queryKeywords.some(k => userText.includes(k))) {
+    isQuerying.value = true
+    queryingText.value = '正在查询系统数据...'
+  }
+  
   // 1. Add User Message
-  messages.value.push({ 
+  chatStore.addMessage({ 
      role: 'user', 
      content: userText,
-     image: imageUrl
+     image: imageUrl,
+     timestamp: dayjs().format('HH:mm')
   })
   
   inputMessage.value = ''
@@ -422,9 +456,10 @@ const sendMessage = async () => {
      debug: {},
      ticketNo: null,
      ticketId: null,
-     showHandover: false
+     showHandover: false,
+     timestamp: dayjs().format('HH:mm')
   })
-  messages.value.push(aiMsg)
+  chatStore.addMessage(aiMsg)
   scrollToBottom()
 
   try {
@@ -433,11 +468,20 @@ const sendMessage = async () => {
         finalMessage += `\n[用户上传了图片: ${imageUrl}]`
     }
 
+    // [REMOVED] 移除了前端自动拼装冗长上下文的逻辑，通过结构化字典传递
+
     const response = await chatDiagnosisStream({
        sessionId: session.sessionId || null,
        userId: session.userId,
        tenantCode: session.tenantCode,
-       message: finalMessage
+       isVip: userInfo.value?.isVip || false,
+       message: finalMessage,
+       aiAnalysis: extraData.aiAnalysis,
+       aiAnalysisSummary: extraData.aiAnalysisSummary,
+       userProblem: extraData.userProblem,
+       suggestedSolution: extraData.suggestedSolution,
+       possibleRootCause: extraData.possibleRootCause,
+       confidenceScore: extraData.confidenceScore
     })
 
     if (!response.ok) throw new Error('Network response was not ok')
@@ -478,9 +522,11 @@ const sendMessage = async () => {
     aiMsg.content += '\n[连接异常，请重试]'
   } finally {
     loading.value = false
+    isQuerying.value = false // 清除查询 Loading 状态
+    queryingText.value = ''
     aiMsg.streaming = false
     // Save messages after each conversation
-    saveMessages()
+    // saveMessages() // Removed
     await nextTick()
     inputRef.value?.focus()
   }
@@ -503,6 +549,9 @@ const handleEvent = (aiMsg, event) => {
             aiMsg.ticketNo = event.metadata.ticketNo
             aiMsg.ticketId = event.metadata.ticketId
             aiMsg.state = '工单已创建'
+            setTimeout(() => {
+                fetchTicketHistory() // 延迟刷新以确保后端事务提交
+            }, 500) 
             break
         case 'ERROR':
             aiMsg.content += `\n[系统错误: ${event.content}]`
@@ -513,17 +562,53 @@ const handleEvent = (aiMsg, event) => {
 const resetSession = () => {
    session.sessionId = ''
    localStorage.removeItem('diagnosis_session_id')
-   localStorage.removeItem('chat_messages')
-   messages.value = [{ role: 'ai', content: '您好！我是您的智能售后专家。已为您开启新会话。' }]
-   saveMessages()
+   localStorage.removeItem('diagnosis_session_id')
+   const userId = userInfo.value.id || 1003
+   // localStorage.removeItem(`chat_messages_${userId}`)
+   chatStore.reset()
+   // saveMessages()
+}
+
+// Instance Confirm Handler
+const handleInstanceConfirm = (instanceData) => {
+   ElMessage.success(`已确认实例 ${instanceData.instanceId}`)
+   // 可以在这里添加后续逻辑，如创建工单或进一步诊断
+   sendMessage(`好的，确认是这个实例 ${instanceData.instanceId}，请继续帮我排查问题`)
 }
 
 const handleCreateTicket = () => {
-   // 构建包含完整对话历史的消息
+   // 1. 提取用户问题：合并所有用户消息，但排除短指令（如"人工", "工单"）
+   const userMessages = chatStore.messages
+        .filter(m => m.role === 'user' && m.content.length > 2 && !['人工', '工单', '转人工'].includes(m.content))
+        .map(m => m.content)
+   const userProblem = userMessages.length > 0 ? userMessages.join('\n') : '用户未提供详细描述'
+
+   // 2. 提取 AI 分析：找到最长的一条 AI 回复（通常是诊断结果）
+   const aiMessages = chatStore.messages.filter(m => m.role === 'ai' && m.content && !m.streaming)
+   const lastAiMsg = aiMessages.sort((a, b) => b.content.length - a.content.length)[0] // 取最长的一条
+   const aiFullContent = lastAiMsg ? lastAiMsg.content : 'AI 未能生成有效分析'
+   
+   // 字段填充逻辑
+   const aiAnalysis = aiFullContent
+   const aiAnalysisSummary = aiFullContent.length > 100 ? aiFullContent.substring(0, 97) + '...' : aiFullContent
+   const suggestedSolution = aiFullContent // 暂用全文作为建议
+   const possibleRootCause = '需根据完整对话记录判断' 
+   const confidenceScore = 0.95
+
+   // 构建包含完整对话历史的消息 (静默构建用于后端持久化，不显示在用户对话框中)
    const conversationHistory = buildConversationHistory()
-   const ticketMessage = `我要创建工单\n\n===对话记录===\n${conversationHistory}`
-   inputMessage.value = ticketMessage
-   sendMessage()
+   
+   // 发送简洁指令，数据通过 extraData 结构化传递
+   inputMessage.value = '我要创建工单'
+   sendMessage({ 
+       aiAnalysis, 
+       aiAnalysisSummary,
+       userProblem, 
+       suggestedSolution, 
+       possibleRootCause,
+       confidenceScore,
+       conversationHistory // 显式传递历史记录，后端按需处理
+   })
 }
 </script>
 

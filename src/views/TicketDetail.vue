@@ -158,29 +158,7 @@
                 </div>
             </div>
 
-            <!-- Reply Box Area -->
-            <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm">
-                <div class="flex gap-4">
-                    <div class="size-10 rounded-full bg-slate-100 flex-shrink-0 bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBntlSzOq2j-7wpW4YViLUZ92lgEpsri66FtnG-W-pDGwT9gVrBnHAWBxNW0CUOtCMpgP2_BNQCgW6vaekG7yY3iCSv25txGNAuAzSfylnqFmKBUqTY-LMwRHGiF4kgTuv9xD1ljdMyvYKSX7jSVreZDAzqROw0aDrtd3fEZVn9uCKnEYQUmwX5q5NYSnNqH2643k-dzmDlXPFqc2cRKTcBRlXIrC8bMfh6LqlBqp1kcKnsmJ5WonUBUerEDZtgTI_-0IzRB1iMP3I');"></div>
-                    <div class="flex-1">
-                        <textarea v-model="replyContent" class="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg p-3 text-sm focus:ring-primary focus:border-primary resize-none h-24" placeholder="回复工单，或提供更多信息..."></textarea>
-                        <div class="flex justify-between items-center mt-3">
-                            <div class="flex gap-2">
-                                <button class="p-2 text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors" title="Attach File">
-                                    <span class="material-symbols-outlined text-[20px]">attach_file</span>
-                                </button>
-                                <button class="p-2 text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors" title="Insert Image">
-                                    <span class="material-symbols-outlined text-[20px]">image</span>
-                                </button>
-                            </div>
-                            <button @click="handleReply" :disabled="!replyContent.trim() || sendingReply" class="bg-primary hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                                {{ sendingReply ? '发送中...' : '发送消息' }}
-                                <span v-if="!sendingReply" class="material-symbols-outlined text-[18px]">send</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <!-- Reply Box Area Removed -->
 
          </div>
 
@@ -282,13 +260,55 @@
 
                      <hr class="border-slate-100 dark:border-slate-800"/>
                      
+                      <!-- 1. 原始描述 -->
                      <div class="flex flex-col gap-2">
                          <span class="text-xs text-slate-500 font-medium uppercase tracking-wider">原始描述</span>
                          <div class="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-100 dark:border-slate-800 max-h-64 overflow-y-auto">
                              <p class="text-sm text-slate-700 dark:text-slate-300 italic leading-relaxed whitespace-pre-wrap">
-                                 "{{ ticket.description }}"
+                                 {{ ticket.description }}
                              </p>
                          </div>
+                     </div>
+
+                     <!-- 2. AI 核心输出 (独立字段, 只读) -->
+                     <div v-if="ticket.aiAnalysis || ticket.suggestedSolution" class="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                         <div v-if="ticket.aiAnalysis" class="flex flex-col gap-2">
+                             <span class="text-xs text-indigo-500 font-bold uppercase tracking-wider flex items-center gap-1">
+                                 <span class="material-symbols-outlined text-[14px]">psychology</span> AI 分析详情
+                             </span>
+                             <div class="bg-indigo-50/30 dark:bg-indigo-900/10 p-3 rounded-lg border border-indigo-100/50 dark:border-indigo-900/20">
+                                 <div class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                                     <MdPreview :modelValue="ticket.aiAnalysis" />
+                                 </div>
+                             </div>
+                         </div>
+
+                         <div v-if="ticket.suggestedSolution" class="flex flex-col gap-2">
+                             <span class="text-xs text-emerald-500 font-bold uppercase tracking-wider flex items-center gap-1">
+                                 <span class="material-symbols-outlined text-[14px]">lightbulb</span> 建议解决方案
+                             </span>
+                             <div class="bg-emerald-50/30 dark:bg-emerald-900/10 p-3 rounded-lg border border-emerald-100/50 dark:border-emerald-900/20">
+                                 <p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
+                                     {{ ticket.suggestedSolution }}
+                                 </p>
+                             </div>
+                         </div>
+                     </div>
+
+                     <!-- 3. 完整对话记录 (仅管理员可见) -->
+                     <div v-if="userInfo.role === 'ADMIN' && ticket.conversationHistory" class="pt-4 border-t border-slate-100 dark:border-slate-800">
+                         <el-collapse>
+                             <el-collapse-item name="history">
+                                 <template #title>
+                                     <span class="text-xs text-slate-500 font-medium uppercase tracking-wider flex items-center gap-1">
+                                         <span class="material-symbols-outlined text-[14px]">forum</span> 完整对话记录 (仅管理员)
+                                     </span>
+                                 </template>
+                                 <div class="bg-slate-900 text-slate-300 p-4 rounded-lg font-mono text-xs overflow-x-auto whitespace-pre-wrap leading-relaxed max-h-96">
+                                     {{ ticket.conversationHistory }}
+                                 </div>
+                             </el-collapse-item>
+                         </el-collapse>
                      </div>
                      
 
@@ -437,48 +457,13 @@ const finalResult = computed(() => {
 })
 
 const timelineItems = computed(() => {
-    const items = []
-    
-    // 1. User Submission (Foundation)
-    items.push({
-        type: 'USER_SUBMIT',
-        title: '用户提交工单',
-        operator: ticket.value.userName || '用户',
-        avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAjgshe5LeVLixVjT8g4veC8v8xOxgr21Y1qpWqW4YViSxSvkBNA97_WGDI0k8bdGnzm5BL7bMoNrgPTgYEEOVj078NjY559ASlIy1FrJD9wFbHrtuIElOBLZaqNoF1mR8DwPlABNkWfknqgRDQ4jDTYNn-EVOkqKhTkSHezAG8A8NhTrFWdUmRdNS3mbLxj2OcPpz0glXcR0zX-q8k173_o1M8iBo9FLx-cXzpMYc8ihpQByZOQetGjoaUlZcPCeHMUkwQtCBBf80',
-        content: `工单创建成功。描述: "${ticket.value.title}"`,
-        time: ticket.value.createdAt,
-        isLast: false // Calculated later
-    })
-
-    // 2. AI Analysis (If exists)
-    if (ticket.value.aiAnalysisSummary || ticket.value.suggestedSolution) {
-        items.push({
-            type: 'AI_ANALYSIS',
-            title: 'AI 助手 (System)',
-            operator: 'AI System',
-            isVerified: true,
-            content: ticket.value.suggestedSolution || ticket.value.aiAnalysisSummary,
-            time: ticket.value.createdAt, // Approx same time
-            confidence: ticket.value.confidenceScore
-        })
-    }
-
-    // 3. Flow Logs (Map to events)
-    // We sort flow logs by time ascending for the timeline approach (Top is Latest in User HTML? No, User HTML Top is 10:35, Bottom is 10:30. So DESCENDING order).
-    // User HTML:
-    // Item 1: Latest (AI Action) 10:35
-    // Item 4: User Submission 10:30
-    
-    // So we need Descending Order (Newsest First).
-    // My manual push above was Ascending.
-    
-    // Let's reset:
     const allEvents = []
 
-    // Add User Creation
+    // 1. User Submission (Always Bottom in stable sort)
     if (ticket.value.createdAt) {
         allEvents.push({
             type: 'USER_SUBMIT',
+            weight: 0, // Lower weight stays below same-time events
             title: '用户提交工单',
             content: `工单创建成功。描述: "${ticket.value.title}"`,
             time: ticket.value.createdAt,
@@ -486,35 +471,42 @@ const timelineItems = computed(() => {
         })
     }
 
-    // Add AI Analysis
+    // 2. AI Analysis (Logical next step)
     if (ticket.value.aiAnalysisSummary) {
         allEvents.push({
             type: 'AI_ANALYSIS',
+            weight: 1, // Higher weight stays above same-time events
             title: 'AI 助手 (System)',
             isVerified: true,
             content: ticket.value.suggestedSolution || ticket.value.aiAnalysisSummary,
-            time: ticket.value.createdAt // logical approximation
+            time: ticket.value.createdAt // Approx same time but higher weight
         })
     }
 
-    // Add Flow Logs
+    // 3. Flow Logs (Real events)
     if (flowLogs.value && flowLogs.value.length) {
         flowLogs.value.forEach(log => {
-             // Avoid duplicating creation log if handled by USER_SUBMIT
              if (log.action === 'CREATED') return 
              
              allEvents.push({
                  type: 'LOG',
+                 weight: 2, // Log events usually follow analysis
                  title: log.action === 'ASSIGNED' ? '自动分配' : '状态更新',
-                 content: log.remarks || `Action: ${log.action}`,
+                 content: log.remarks || `动作: ${log.action}`,
                  time: log.createdAt,
                  operator: log.operator
              })
         })
     }
 
-    // Sort Descending
-    return allEvents.sort((a, b) => new Date(b.time) - new Date(a.time)).map((item, index, arr) => ({
+    // Sort Descending (Newest First)
+    // Primary: Time (DESC)
+    // Secondary: Weight (DESC) for same-time stability
+    return allEvents.sort((a, b) => {
+        const timeDiff = new Date(b.time) - new Date(a.time)
+        if (timeDiff !== 0) return timeDiff
+        return (b.weight || 0) - (a.weight || 0)
+    }).map((item, index, arr) => ({
         ...item,
         isLast: index === arr.length - 1
     }))
@@ -602,8 +594,8 @@ onUnmounted(() => { if (eventSource.value) eventSource.value.close() })
 .timeline-line::before {
     content: '';
     position: absolute;
-    top: 2rem;
-    bottom: -2rem;
+    top: 2.5rem; /* Start from below the icon */
+    bottom: 0;   /* Go to the bottom of the container */
     left: 1.25rem;
     width: 2px;
     background-color: #e5e7eb;
@@ -612,7 +604,8 @@ onUnmounted(() => { if (eventSource.value) eventSource.value.close() })
 .dark .timeline-line::before {
     background-color: #1e293b;
 }
-.last-item .timeline-line::before {
+/* Fix: Use .last-item.timeline-line to target the same element */
+.timeline-line.last-item::before {
     display: none;
 }
 </style>

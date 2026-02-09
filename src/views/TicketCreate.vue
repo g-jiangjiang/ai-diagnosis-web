@@ -9,8 +9,8 @@
         <h2 class="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">智能客服 AI</h2>
       </div>
       <div class="flex flex-1 justify-end gap-6 items-center">
-         <div class="bg-center bg-no-repeat bg-cover rounded-full size-10 ring-2 ring-slate-100 dark:ring-slate-800 bg-indigo-100 flex items-center justify-center text-indigo-500 font-bold">
-             AM
+         <div class="rounded-full size-10 ring-2 ring-slate-100 dark:ring-slate-800 overflow-hidden">
+             <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuAjgshe5LeVLixVjT8g4veC8v8xOxgr21Y1qpWqW4YViSxSvkBNA97_WGDI0k8bdGnzm5BL7bMoNrgPTgYEEOVj078NjY559ASlIy1FrJD9wFbHrtuIElOBLZaqNoF1mR8DwPlABNkWfknqgRDQ4jDTYNn-EVOkqKhTkSHezAG8A8NhTrFWdUmRdNS3mbLxj2OcPpz0glXcR0zX-q8k173_o1M8iBo9FLx-cXzpMYc8ihpQByZOQetGjoaUlZcPCeHMUkwQtCBBf80" class="w-full h-full object-cover">
          </div>
       </div>
     </header>

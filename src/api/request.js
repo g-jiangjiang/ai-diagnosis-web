@@ -6,6 +6,29 @@ const service = axios.create({
     timeout: 10000
 })
 
+
+
+// 请求拦截器
+service.interceptors.request.use(
+    config => {
+        const userInfoStr = localStorage.getItem('userInfo')
+        if (userInfoStr) {
+            try {
+                const userInfo = JSON.parse(userInfoStr)
+                if (userInfo && userInfo.token) {
+                    config.headers['Authorization'] = 'Bearer ' + userInfo.token
+                }
+            } catch (e) {
+                console.error('Failed to parse userInfo for token', e)
+            }
+        }
+        return config
+    },
+    error => {
+        return Promise.reject(error)
+    }
+)
+
 // 响应拦截器
 service.interceptors.response.use(
     response => {
@@ -24,6 +47,14 @@ service.interceptors.response.use(
     },
     error => {
         console.error('API Error:', error)
+
+        if (error.response && error.response.status === 401) {
+            ElMessage.error('登录已过期，请重新登录')
+            localStorage.removeItem('userInfo')
+            window.location.href = '/#/login'
+            return Promise.reject(error)
+        }
+
         ElMessage.error(error.message || '网络请求失败')
         return Promise.reject(error)
     }
