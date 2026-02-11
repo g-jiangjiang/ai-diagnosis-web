@@ -163,18 +163,12 @@
                                     </div>
 
                                     <!-- Complex Problem / Ticket Suggestion Card -->
-                                    <div v-if="msg.upgradeRequired || msg.showHandover" class="mt-2 bg-[#f6f6f8] dark:bg-slate-800 p-4 rounded-2xl text-sm border-l-4 border-orange-400 w-full">
-                                        <div class="flex gap-2 items-center mb-2">
-                                            <span class="material-symbols-outlined text-orange-500 text-lg">warning</span>
-                                            <span class="font-bold text-orange-600 dark:text-orange-400">检测到复杂问题</span>
+                                    <div v-if="msg.upgradeRequired || msg.showHandover" class="mt-2 w-full">
+                                        <div @click="handleCreateTicket" class="flex items-center justify-center gap-2 bg-primary hover:bg-blue-700 text-white py-3 px-4 rounded-xl transition-all shadow-lg shadow-primary/20 group mb-2 cursor-pointer">
+                                            <span class="material-symbols-outlined group-hover:rotate-90 transition-transform duration-300">confirmation_number</span>
+                                            <span class="font-medium">创建支持工单</span>
                                         </div>
-                                        <p class="text-slate-700 dark:text-slate-300">常规排查步骤似乎无效。建议您为此提交一个优先处理工单，由人工专家介入。</p>
-                                        <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
-                                            <button @click="handleCreateTicket" class="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 hover:border-primary text-primary hover:bg-slate-50 dark:hover:bg-slate-800 px-4 py-2 rounded-lg transition-all shadow-sm w-full sm:w-auto justify-center">
-                                                <span class="material-symbols-outlined">confirmation_number</span>
-                                                <span class="font-medium">创建支持工单</span>
-                                            </button>
-                                        </div>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 text-center">检测到复杂问题，常规排查步骤无效，建议提交优先处理工单</p>
                                     </div>
 
                                     <!-- Ticket Created Success -->
@@ -468,7 +462,11 @@ const sendMessage = async (extraData = {}) => {
         finalMessage += `\n[用户上传了图片: ${imageUrl}]`
     }
 
-    // [REMOVED] 移除了前端自动拼装冗长上下文的逻辑，通过结构化字典传递
+    // 构建对话历史记录，用于后端计算轮次和工单内容
+    const conversationHistory = buildConversationHistory()
+    if (conversationHistory) {
+        finalMessage += `\n===对话记录===\n${conversationHistory}`
+    }
 
     const response = await chatDiagnosisStream({
        sessionId: session.sessionId || null,
